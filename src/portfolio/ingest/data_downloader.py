@@ -3,12 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 
-from configs.config import Config
-
 
 class DataDownloader:
     """APIをたたいてdataを取り込むためのクラス"""
-    def __init__(self, config: Config):
+    def __init__(self, config):
         self.config = config.data_download
 
     def data_download(self) -> None:
