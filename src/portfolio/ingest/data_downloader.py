@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 
-
 class DataDownloader:
     """APIをたたいてdataを取り込むためのクラス"""
     def __init__(self, config):
@@ -14,7 +13,7 @@ class DataDownloader:
         kaggle APIたたいてdata/raw/kaggle-world-weatherに置く
         """
         out_dir: Path = self.config.out_dir
-        datasets: str = self.config.dataset
+        datasets: str = self.config.datasets
         
         out_dir.mkdir(parents=True, exist_ok=True)
     
