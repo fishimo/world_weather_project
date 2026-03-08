@@ -7,6 +7,8 @@ import sqlite3
 import pandas as pd
 import polars as pl
 
+from src.portfolio.utils.pd_pl_utils import ensure_polars
+
 
 class DBManager:
     """DB操作全般を管理するクラス"""
@@ -76,7 +78,7 @@ class DBManager:
             pd_df = pd.read_sql_query(sql, conn)
 
         # pandas -> polars
-        return pl.from_pandas(pd_df)
+        return ensure_polars(pd_df)
 
     def load_processed_data(
         self,
@@ -136,7 +138,7 @@ class DBManager:
             pd_df = pd.read_sql_query(sql, conn, params=(start_str, end_str))
 
         # pandas -> polars
-        return pl.from_pandas(pd_df)
+        return ensure_polars(pd_df)
 
         
 
