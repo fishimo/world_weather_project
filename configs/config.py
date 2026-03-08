@@ -28,6 +28,7 @@ class DataProcess:
 class DataBase:
     """DBManager用の設定"""
     table_name: str = "processed_GWR_data"
+    ts_col: str = "last_updated"
     db_path: Path = field(default_factory=lambda: Path("data/processed/kaggle_world_weather/processed_GDR.db"))
 
 class Config:
