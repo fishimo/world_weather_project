@@ -6,11 +6,13 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "kaggle>=2.0.0",
+    "lightgbm>=4.6.0",
     "numpy>=2.4.2",
     "pandas>=3.0.0",
     "polars>=1.38.1",
     "pyarrow>=23.0.1",
     "scikit-learn>=1.8.0",
+    "tqdm>=4.67.3",
 ]
 
 [dependency-groups]

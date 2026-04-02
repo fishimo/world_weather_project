@@ -43,4 +43,12 @@ python -m uv pip install -e .
 python -m uv run python -m scripts.check_data_save
 ```
 
-### 
+### データ抽出
+
+- DBに保存したデータを抽出（日付指定可能）
+
+### データ前処理
+
+- 風速を日平均に変換
+- データ型の変換
+
