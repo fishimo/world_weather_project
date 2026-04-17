@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 
 from configs.config import config
-from src.portfolio.ingest.data_downloader import DataDownloader
-from src.portfolio.ingest.data_processor import DataProcessor
-from portfolio.data.database_manager import DBManager
+from src.portfolio.data.data_downloader import DataDownloader
+from src.portfolio.data.data_processor import DataProcessor
+from src.portfolio.data.database_manager import DBManager
 
 def _fmt_sec(sec: float) -> str:
     """timeを分かりやすく表示するヘルパー関数"""
