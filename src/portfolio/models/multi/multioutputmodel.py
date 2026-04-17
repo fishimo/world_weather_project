@@ -20,8 +20,8 @@ class RegressorLike(Protocol):
 class MultiOutputModel:
     """RegressorLikeをhorizonごとにfitするラッパー"""
 
-    def __init__(self, base_model_fectory: Callable[[], RegressorLike]):
-        self.base_model_factory = base_model_fectory
+    def __init__(self, base_model_factory: Callable[[], RegressorLike]):
+        self.base_model_factory = base_model_factory
         self.models = []
         self.n_horizons: Optional[int] = None
         self._feature_names_list: List[Optional[List[str]]] = []
