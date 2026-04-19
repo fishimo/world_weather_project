@@ -16,6 +16,7 @@ from typing import (
     Union,
 )
 
+from portfolio.pipeline.state import PredictState, StateLike, TrainState
 from src.exceptions import InvalidStateError
 
 
@@ -73,7 +74,7 @@ class BaseStep(ABC):
                 f"(expected={allowed_types}, actual={type(state)})"
             )
 
-        for attr in required_attrs:
+        for attr in required_attr:
             if not hasattr(state, attr):
                 raise TypeError(f"{step_name}: stateに{attr}属性がありません")
 
@@ -110,20 +111,20 @@ class BaseStep(ABC):
         """
         label = self.__class__.__name__
         lines = [f"{prefix} {label}"]
-        return lines, self.__gen__next__prefix(prefix)
+        return lines, self._gen_next_prefix(prefix)
 
 
 class BranchStep(BaseStep):
     def __init__(
         self, 
         condition_fn: Callable[[StateLike], bool],
-        true_steps: Union[BaseSteps, Pipeline],
+        true_steps: Union[BaseStep, Pipeline],
         false_steps: Union[BaseStep, Pipeline],
     ):
         super().__init__()
         self.condition_fn = condition_fn
         self.true_steps = true_steps
-        self.false_steps = faslse_steps
+        self.false_steps = false_steps
 
     def _extract_lambda_content(self, fn: Callable) -> str:
         """
@@ -154,49 +155,48 @@ class BranchStep(BaseStep):
             return steps.run(state)
         else:
             return steps(state)
-        
-        return state
 
     def depict(self, prefix: str = "0") -> Tuple[list[str], str]:
-        condition_name = self._extract_lambda_cotent(self.condition_fn)
+        condition_name = self._extract_lambda_content(self.condition_fn)
         lines = [f"{prefix} BranchStep: \033[33m{condition_name}\033[0m"]
         spaces = "".join(c for c in prefix if c == " ")
-        lines.append(f"{space}    \033[32mTrue:\033[0m")
+        lines.append(f"{spaces}    \033[32mTrue:\033[0m")
 
         true_prefix = "      " + re.sub(r"(\d)(?!.*\d)", r"\1.1", prefix)
-        true_lines, true_next_prefix = self.true_steps.depict(true_prefix)
-        lines.etend(true_lines)
+        true_lines, _ = self.true_steps.depict(true_prefix)
+        lines.extend(true_lines)
 
         lines.append(f"{spaces}    \033[31mFalse:\033[0m")
         false_prefix = "      " + re.sub(r"(\d)(?!.*\d)", r"\1.1", prefix)
-        false_lines, false_next_prefix = self.flase_steps.depict(false_prefix)
+        false_lines, _ = self.false_steps.depict(false_prefix)
         lines.extend(false_lines)
 
         return lines, self._gen_next_prefix(prefix)
 
-    logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-    class PipeLine:
-        def __init__(slf, steps: List[BranchSteps], verbose: bool = False):
-            self.steps = steps
-            self.verbose = verboseself.step_counter = 0
+class Pipeline:
+    def __init__(self, steps: List[BranchStep], verbose: bool = False):
+        self.steps = steps
+        self.verbose = verbose
+        self.step_counter = 0
 
-        def __iter__(self) -> Iterator[BaseStep]:
-            return iter(self.steps)
+    def __iter__(self) -> Iterator[BaseStep]:
+        return iter(self.steps)
 
-        def _next_step_index(self) -> int:
-            idx = self.step_counter
-            self.step_counter += 1
-            return idx
+    def _next_step_index(self) -> int:
+        idx = self.step_counter
+        self.step_counter += 1
+        return idx
 
-        def __rshift__(self, other: Union[BaseStep, Pipeline]) -> Pipeline:
-            if isinstance(other, BaseStep):
-                return Pipeline(self.steps + [other], verbose=self.verbose)
-            elif isinstance(other, Pipeline):
-                return Pipeline(self.steps + other.steps, verbose=self.verbose)
-            else:
-                raise TypeError(f"Unsupported type: {type(other)}")
+    def __rshift__(self, other: Union[BaseStep, Pipeline]) -> Pipeline:
+        if isinstance(other, BaseStep):
+            return Pipeline(self.steps + [other], verbose=self.verbose)
+        elif isinstance(other, Pipeline):
+            return Pipeline(self.steps + other.steps, verbose=self.verbose)
+        else:
+            raise TypeError(f"Unsupported type: {type(other)}")
         
     def _execute_step_with_logging(
         self,
