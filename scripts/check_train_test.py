@@ -43,16 +43,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def filter_trainable_rows(ds: Dataset) -> Dataset:
-    if ds.idx is None or ds.X is None or ds.y is None or ds.y_expanded is None:
-        raise ValueError("dataset must have idx, X, y and y_expanded")
-
-    mask = ~ds.idx.isna().any(axis=1)
-    mask &= ~ds.y.isna()
-    mask &= ~ds.y_expanded.isna().any(axis=1)
-    return ds[mask]
-
-
 def main() -> None:
     args = parse_args()
 
@@ -74,7 +64,7 @@ def main() -> None:
     dataset_generator = DatasetGenerator(horizon)
     ds = dataset_generator.prepare_dataset(df)
     ds = dataset_generator.expand_horizon(ds)
-    ds = filter_trainable_rows(ds)
+    ds = dataset_generator.filter_trainable_rows(ds)
 
     if len(ds) == 0:
         raise ValueError("No trainable rows found")

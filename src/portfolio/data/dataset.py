@@ -219,4 +219,13 @@ class DatasetGenerator:
         test_ds = ds[ds.date >= split_ts]
 
         return train_ds, test_ds
+    
+    def filter_trainable_rows(ds: Dataset) -> Dataset:
+        if ds.idx is None or ds.X is None or ds.y is None or ds.y_expanded is None:
+            raise ValueError("dataset must have idx, X, y and y_expanded")
+
+        mask = ~ds.idx.isna().any(axis=1)
+        mask &= ~ds.y.isna()
+        mask &= ~ds.y_expanded.isna().any(axis=1)
+        return ds[mask]
 
