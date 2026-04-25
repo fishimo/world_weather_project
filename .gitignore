@@ -3,10 +3,11 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.venv_broken_20260412
 .env
 
 # Jupyter
-.ipynb_checkpoints/
+*.ipynb
 
 # OS/Editor
 .DS_Store
@@ -24,3 +25,23 @@ Thumbs.db
 
 # model
 *.pkl
+
+# data
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# runs
+runs/**
+!runs/**/.gitkeep
+
+# kaggle
+.kaggle/
+kaggle.json
+**/kaggle.json
+
+# uv_cache
+.uv-cache
+
+# info
+world_weather_project.egg-info

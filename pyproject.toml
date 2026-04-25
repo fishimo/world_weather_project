@@ -1,0 +1,35 @@
+[project]
+name = "world-weather-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "kaggle>=2.0.0",
+    "lightgbm>=4.6.0",
+    "numpy>=2.4.2",
+    "pandas>=3.0.0",
+    "plotly>=6.7.0",
+    "polars>=1.38.1",
+    "pyarrow>=23.0.1",
+    "scikit-learn>=1.8.0",
+    "tqdm>=4.67.3",
+]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "ruff>=0.15.1",
+]
