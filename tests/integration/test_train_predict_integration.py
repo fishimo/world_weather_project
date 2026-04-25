@@ -11,10 +11,10 @@ import pytest
 
 from configs.config import Config
 from configs.params import LightGBMParams
-from src.portfolio.data.data_processor import DataProcessor
-from src.portfolio.data.database_manager import DBManager
-from src.portfolio.pipeline import predict as predict_pipeline
-from src.portfolio.pipeline import train as train_pipeline
+from portfolio.data.data_processor import DataProcessor
+from portfolio.data.database_manager import DBManager
+from portfolio.pipeline import predict as predict_pipeline
+from portfolio.pipeline import train as train_pipeline
 
 
 class _SmallParams:

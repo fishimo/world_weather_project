@@ -146,7 +146,7 @@ def main() -> None:
 
     print("[4/8] save processed data to DB")
     db_manager = DBManager(config)
-    db_manager.processed_data_save(processed_df, if_exists="replace")
+    db_manager.processed_data_save(processed_df, if_exists="append")
 
     print(f"[5/8] load slice from DB start={start_dt} end={end_dt}")
     df = db_manager.load_processed_data(start_dt, end_dt)

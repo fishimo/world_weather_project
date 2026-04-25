@@ -70,13 +70,13 @@ python -m uv run python -m portfolio.pipeline.train --test-size 0.2
 保存済みモデルを読み込み、指定期間のデータから最新日時のレコードを使って予測し、CSV に保存します。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.prediction --start "2026-04-01 00:00:00" --end "2026-04-21 00:00:00"
+python -m uv run python -m portfolio.pipeline.predict --start "2026-04-01 00:00:00" --end "2026-04-21 00:00:00"
 ```
 
 モデルパスや出力先を変えたい場合は引数で指定できます。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.prediction `
+python -m uv run python -m portfolio.pipeline.predict `
   --model-path test_models/test_model.pkl `
   --start "2026-04-01 00:00:00" `
   --end "2026-04-21 00:00:00" `
@@ -87,4 +87,4 @@ python -m uv run python -m portfolio.pipeline.prediction `
 
 - 予測で使う horizon は現在 `configs/config.py` の `pipeline.horizon = [1, 2, 3]` です。
 - 学習時の特徴量一覧はモデル保存時に一緒に持たせており、推論時はその特徴量順にそろえて予測します。
-- `prediction` は内部的に `predict.py` の処理を呼び出しており、指定期間のデータを読み込んだあと、その期間内の最新日時のレコードだけを使って予測します。
+- `predict` は指定期間のデータを読み込んだあと、その期間内の最新日時のレコードだけを使って予測します。
