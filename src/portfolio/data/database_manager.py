@@ -7,7 +7,7 @@ import sqlite3
 import pandas as pd
 import polars as pl
 
-from src.portfolio.utils.pd_pl_utils import ensure_polars
+from portfolio.utils.pd_pl_utils import ensure_polars
 
 
 class DBManager:
@@ -136,6 +136,12 @@ class DBManager:
             """
 
             pd_df = pd.read_sql_query(sql, conn, params=(start_str, end_str))
+
+        if pd_df.empty:
+            raise ValueError(
+                "No processed data found in the requested range: "
+                f"start={start_str}, end={end_str}, table={self.table_name}"
+            )
 
         # pandas -> polars
         return ensure_polars(pd_df)

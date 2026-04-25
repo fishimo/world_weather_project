@@ -239,7 +239,6 @@ class Evaluator:
 
     def evaluate(
         self,
-        timestamp: np.ndarray,
         y_true: np.ndarray,
         y_pred: np.ndarray,
         metrics: Union[List[str], str] = "all",

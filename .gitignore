@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.venv_broken_20260412
 .env
 
 # Jupyter
@@ -38,3 +39,9 @@ runs/**
 .kaggle/
 kaggle.json
 **/kaggle.json
+
+# uv_cache
+.uv-cache
+
+# info
+world_weather_project.egg-info

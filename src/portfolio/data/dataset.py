@@ -5,7 +5,7 @@ import polars as pl
 import pandas as pd
 import re
 
-from src.portfolio.utils.pd_pl_utils import ensure_pandas, ensure_polars
+from portfolio.utils.pd_pl_utils import ensure_pandas, ensure_polars
 
 
 @dataclass
@@ -220,7 +220,7 @@ class DatasetGenerator:
 
         return train_ds, test_ds
     
-    def filter_trainable_rows(ds: Dataset) -> Dataset:
+    def filter_trainable_rows(self, ds: Dataset) -> Dataset:
         if ds.idx is None or ds.X is None or ds.y is None or ds.y_expanded is None:
             raise ValueError("dataset must have idx, X, y and y_expanded")
 
