@@ -1,6 +1,5 @@
 import polars as pl
 
-from configs.config import config
 
 
 class PreProcessor:

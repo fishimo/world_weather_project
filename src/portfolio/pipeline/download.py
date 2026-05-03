@@ -11,20 +11,28 @@ for root in (PROJECT_ROOT, SRC_ROOT):
         sys.path.insert(0, root_str)
 
 from configs.config import Config
-from portfolio.data.data_downloader import DataDownloader
-from portfolio.data.data_processor import DataProcessor
+from portfolio.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
+from portfolio.data.amedas_processor import AmedasProcessor
 from portfolio.data.database_manager import DBManager
 
 
 def main() -> None:
     config = Config()
 
-    print("[1/4] download raw data")
-    downloader = DataDownloader(config)
-    downloader.data_download()
+    print("[1/4] fetch latest AMeDAS data")
+    fetcher = AmedasLatestFetcher(config)
+    writer = AmedasRawDataWriter(config)
+    try:
+        df_raw = fetcher.fetch_latest()
+        writer.save_raw_data(df_raw)
+    except Exception as e:
+        if writer.has_raw_data():
+            print(f"[WARN] fetch 失敗、既存 raw データで続行: {e}")
+        else:
+            raise
 
     print("[2/4] read raw data")
-    processor = DataProcessor(config)
+    processor = AmedasProcessor(config)
     raw_df = processor.read_data()
     print(f"loaded rows={len(raw_df)}, cols={raw_df.shape[1]}")
 

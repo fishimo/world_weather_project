@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 
 import pandas as pd
 
@@ -15,8 +15,8 @@ for root in (PROJECT_ROOT, SRC_ROOT):
         sys.path.insert(0, root_str)
 
 from configs.config import Config
-from portfolio.data.data_downloader import DataDownloader
-from portfolio.data.data_processor import DataProcessor
+from portfolio.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
+from portfolio.data.amedas_processor import AmedasProcessor
 from portfolio.data.database_manager import DBManager
 from portfolio.data.dataset import DatasetGenerator
 from portfolio.features.feature_preprocessor import PreProcessor
@@ -122,37 +122,34 @@ def main() -> None:
 
     config = Config()
 
-    print("[1/8] load model")
+    print("[1/6] load model")
     artifact = ModelStore().load(args.model_path)
     model = artifact.model
     horizon = list(artifact.metadata.get("horizon", config.pipeline.horizon))
     print(f"loaded model={artifact.model_name}, horizon={horizon}")
 
-    print("[2/8] download latest raw data")
-    downloader = DataDownloader(config)
-    try:
-        downloader.data_download()
-    except RuntimeError as e:
-        if downloader.has_raw_data():
-            print(f"[WARN] download failed, fallback to local raw data: {e}")
-            print(f"[WARN] using existing file: {downloader.raw_data_path()}")
-        else:
-            raise
-
-    print("[3/8] read/process raw data")
-    processor = DataProcessor(config)
-    raw_df = processor.read_data()
-    processed_df = processor.process_data(raw_df)
-
-    print("[4/8] save processed data to DB")
+    print("[2/6] fetch latest AMeDAS data and update DB")
+    fetcher = AmedasLatestFetcher(config)
+    writer = AmedasRawDataWriter(config)
     db_manager = DBManager(config)
-    db_manager.processed_data_save(processed_df, if_exists="append")
+    try:
+        df_raw = fetcher.fetch_latest()
+        if not df_raw.empty:
+            writer.save_raw_data(df_raw)
+            processor = AmedasProcessor(config)
+            # 取得した新規行のみ処理・追記する（raw CSV 全体を再度 append しない）
+            processed_new = processor.process_data(df_raw)
+            db_manager.processed_data_save(processed_new, if_exists="append")
+        else:
+            print("[WARN] 新規データなし、既存 DB で続行")
+    except Exception as e:
+        print(f"[WARN] fetch/process 失敗、既存 DB で続行: {e}")
 
-    print(f"[5/8] load slice from DB start={start_dt} end={end_dt}")
+    print(f"[3/6] load slice from DB start={start_dt} end={end_dt}")
     df = db_manager.load_processed_data(start_dt, end_dt)
     print(f"loaded rows={df.height}, cols={df.width}")
 
-    print("[6/8] preprocess and build dataset")
+    print("[4/6] preprocess and build dataset")
     preprocessor = PreProcessor(config)
     df = preprocessor.select_columns(df)
     df = preprocessor.ave_day_columns(df)
@@ -165,13 +162,16 @@ def main() -> None:
         raise ValueError("Prediction dataset has no feature columns.")
     ds.X = _align_features(ds.X, artifact.feature_list)
 
-    print(f"dataset ready rows={len(ds)}, features={ds.X.shape[1]}, latest_date={ds.idx['date'].max()}")
+    print(
+        f"dataset ready rows={len(ds)}, features={ds.X.shape[1]}, "
+        f"latest_date={ds.idx['date'].max()}"
+    )
 
-    print("[7/8] predict")
+    print("[5/6] predict")
     predictions = model.predict(ds, horizons=horizon)
     print(f"predictions shape={predictions.shape}")
 
-    print("[8/8] save output")
+    print("[6/6] save output")
     pred_cols = [f"pred_h{h}" for h in horizon]
     pred_values = pd.DataFrame(predictions, columns=pred_cols)
     output_df = _build_prediction_output(ds.idx, pred_values, horizon)
@@ -183,4 +183,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -1,13 +1,13 @@
 # world_weather_project
 
-日本の地点別気象データを対象に、データ取得から学習・予測までを一通り回せる実験用プロジェクトです。
-現在は Kaggle の `global-weather-repository` を取得し、日本データに絞って前処理し、SQLite に保存したうえで、複数 horizon の気温予測を行うところまで実装しています。
+日本の AMeDAS 気象データを対象に、データ取得から学習・予測までを一通り回せる実験用プロジェクトです。
+気象庁公開データを取得し、東京（北の丸公園/旧大手町）の風速を 1〜3 日先まで予測します。
 
 ## 現時点の実装内容
 
-- Kaggle API を使った気象データのダウンロード
-- 日本のデータの抽出
-- 必要カラムの選択と風速 `wind_kph -> wind_mps` 変換
+- 気象庁 AMeDAS JSON API からの最新データ取得（1時間粒度）
+- 気象庁過去データ HTML からの履歴データ取得（月単位バックフィル）
+- rawデータ CSV への追記・重複排除保存
 - 加工済みデータの SQLite 保存
 - DB からの全件読み込み / 期間指定読み込み
 - 学習用 Dataset の作成
@@ -26,24 +26,35 @@
 ```powershell
 python -m pip install -U uv
 python -m uv venv
-python -m uv pip install -e .
+python -m uv sync
 ```
-
-Kaggle からデータ取得するため、事前に Kaggle API の認証設定が必要です。
-`kaggle.json` を使う場合は、一般的な Kaggle CLI の配置場所に置いてから実行してください。
 
 ## ディレクトリと主な出力
 
-- 生データ: `data/raw/kaggle_world_weather/`
-- 加工済み DB: `data/processed/kaggle_world_weather/processed_GDR.db`
+- raw データ: `data/raw/amedas/amedas_raw.csv`
+- 加工済み DB: `data/processed/amedas/processed_amedas.db`
 - 学習済みモデル: `test_models/test_model.pkl`
 - 予測結果: `outputs/predictions.csv`
 
 ## 実行方法
 
-### 1. データダウンロードと DB 更新
+### 0. 過去データのバックフィル（初回のみ）
 
-生データのダウンロード、前処理、日本データの抽出、SQLite への保存までをまとめて実行します。
+学習に使う期間の履歴データを気象庁HTMLから取得して raw CSV に保存します。
+
+```powershell
+# 単月
+python scripts/fetch_historical.py --year 2025 --month 4
+
+# 期間指定
+python scripts/fetch_historical.py --from 2024-01 --to 2025-04
+```
+
+> リクエスト間隔は 2 秒以上（config.request_interval_sec）で気象庁への負荷を配慮しています。
+
+### 1. データ取得と DB 更新
+
+最新の AMeDAS JSON データを取得し、raw CSV に追記・前処理・SQLite 保存まで行います。
 
 ```powershell
 python -m uv run python -m portfolio.pipeline.download
@@ -51,13 +62,7 @@ python -m uv run python -m portfolio.pipeline.download
 
 ### 2. 学習
 
-DB に入っている加工済みデータを読み込み、前処理、Dataset 作成、学習、簡易評価、モデル保存までを行います。
-
-```powershell
-python -m uv run python -m portfolio.pipeline.train
-```
-
-`--test-size` を指定すると train/test の分割比率を変更できます。
+DB に入っている加工済みデータを読み込み、前処理・Dataset 作成・学習・簡易評価・モデル保存までを行います。
 
 ```powershell
 python -m uv run python -m portfolio.pipeline.train --test-size 0.2
@@ -70,12 +75,6 @@ python -m uv run python -m portfolio.pipeline.train --test-size 0.2
 保存済みモデルを読み込み、指定期間のデータから最新日時のレコードを使って予測し、CSV に保存します。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.predict --start "2026-04-01 00:00:00" --end "2026-04-21 00:00:00"
-```
-
-モデルパスや出力先を変えたい場合は引数で指定できます。
-
-```powershell
 python -m uv run python -m portfolio.pipeline.predict `
   --model-path test_models/test_model.pkl `
   --start "2026-04-01 00:00:00" `
@@ -83,8 +82,19 @@ python -m uv run python -m portfolio.pipeline.predict `
   --output-path outputs/predictions.csv
 ```
 
+### 最新データの定期取得（参考: cron 設定例）
+
+毎時 25 分に最新データを取得して raw CSV に追記する場合:
+
+```
+25 * * * * cd /path/to/world_weather_project && python scripts/fetch_latest.py
+```
+
+予測も合わせて行う場合は `portfolio.pipeline.predict` を実行してください（内部で最新データ取得を行います）。
+
 ## 補足
 
-- 予測で使う horizon は現在 `configs/config.py` の `pipeline.horizon = [1, 2, 3]` です。
-- 学習時の特徴量一覧はモデル保存時に一緒に持たせており、推論時はその特徴量順にそろえて予測します。
-- `predict` は指定期間のデータを読み込んだあと、その期間内の最新日時のレコードだけを使って予測します。
+- 予測で使う horizon は `configs/config.py` の `pipeline.horizon = [1, 2, 3]`（日単位）です。
+- 観測地点の追加は `configs/config.py` の `AmedasFetch.stations` リストに `AmedasStation` を追加します。
+- 物理量（気温・湿度・気圧等）の追加は `amedas_fetcher.py` の `_JSON_VALUE_FIELDS` / `_HTML_VALUE_FIELDS` に1行追記します。
+- 学習時の特徴量一覧はモデル保存時に保持されており、推論時に列順を自動で揃えます。

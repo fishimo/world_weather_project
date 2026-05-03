@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import os
 from pathlib import Path
 import sqlite3
 import pandas as pd

@@ -11,7 +11,7 @@ import pytest
 
 from configs.config import Config
 from configs.params import LightGBMParams
-from portfolio.data.data_processor import DataProcessor
+from portfolio.data.amedas_processor import AmedasProcessor
 from portfolio.data.database_manager import DBManager
 from portfolio.pipeline import predict as predict_pipeline
 from portfolio.pipeline import train as train_pipeline
@@ -25,30 +25,32 @@ class _SmallParams:
     )
 
 
-def _write_dummy_weather_csv(path: Path) -> None:
+def _write_dummy_amedas_csv(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
     rows: list[dict[str, object]] = []
     start = datetime(2026, 1, 1, 12, 0, 0)
-    locations = [
-        ("Tokyo", 35.6762, 139.6503, 10.0),
-        ("Osaka", 34.6937, 135.5023, 14.0),
+    stations = [
+        ("44132", "Tokyo", 35.6944, 139.7529, 3.0),
+        ("44136", "Osaka", 34.6937, 135.5023, 4.0),
     ]
 
     for day in range(12):
         current = start + timedelta(days=day)
-        for idx, (location_name, latitude, longitude, base_wind) in enumerate(locations):
+        for station_id, location_name, lat, lon, base_wind in stations:
             rows.append(
                 {
-                    "country": "Japan",
+                    "timestamp": current.strftime("%Y-%m-%d %H:%M:%S"),
+                    "station_id": station_id,
                     "location_name": location_name,
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "last_updated": current.strftime("%Y-%m-%d %H:%M:%S"),
-                    "temperature_celsius": 18.0 + day + idx,
-                    "wind_kph": base_wind + day,
-                    "wind_degree": 90 + idx * 30 + day,
-                    "pressure_mb": 1000.0 + day + idx,
+                    "latitude": lat,
+                    "longitude": lon,
+                    "temperature_celsius": 18.0 + day,
+                    "humidity_pct": 60.0,
+                    "wind_mps": base_wind + day * 0.1,
+                    "wind_degree": 90.0 + day * 3,
+                    "pressure_mb": 1013.0 + day * 0.1,
+                    "missing_flag": False,
                 }
             )
 
@@ -56,11 +58,11 @@ def _write_dummy_weather_csv(path: Path) -> None:
 
 
 def _prepare_processed_db(workspace: Path) -> Path:
-    raw_csv = workspace / "data" / "raw" / "kaggle_world_weather" / "GlobalWeatherRepository.csv"
-    _write_dummy_weather_csv(raw_csv)
+    raw_csv = workspace / "data" / "raw" / "amedas" / "amedas_raw.csv"
+    _write_dummy_amedas_csv(raw_csv)
 
     config = Config()
-    processor = DataProcessor(config)
+    processor = AmedasProcessor(config)
     processed_df = processor.process_data(processor.read_data())
 
     db_manager = DBManager(config)
@@ -114,7 +116,12 @@ def test_predict_pipeline_uses_saved_model(
 ) -> None:
     model_path = _run_train(monkeypatch)
 
-    monkeypatch.setattr(predict_pipeline.DataDownloader, "data_download", lambda self: None)
+    # fetch_latest をスキップ（空DataFrameを返す → DB更新ステップをバイパス）
+    monkeypatch.setattr(
+        predict_pipeline.AmedasLatestFetcher,
+        "fetch_latest",
+        lambda _: pd.DataFrame(),
+    )
     monkeypatch.setattr(
         sys,
         "argv",

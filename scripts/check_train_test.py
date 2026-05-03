@@ -5,7 +5,6 @@ import sys
 from dataclasses import asdict, replace
 from pathlib import Path
 
-import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +18,7 @@ from configs.config import Config
 from configs.params import Params
 from portfolio.models.multi.builder import MultiModelBuilder
 from src.portfolio.data.database_manager import DBManager
-from src.portfolio.data.dataset import Dataset, DatasetGenerator
+from src.portfolio.data.dataset import DatasetGenerator
 from src.portfolio.features.feature_preprocessor import PreProcessor
 from src.portfolio.models.model_store import ModelStore, TrainedModelArtifact
 

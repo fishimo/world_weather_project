@@ -5,8 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "kaggle>=2.0.0",
     "lightgbm>=4.6.0",
+    "lxml>=5.0.0",
+    "requests>=2.32.0",
     "numpy>=2.4.2",
     "pandas>=3.0.0",
     "plotly>=6.7.0",
@@ -14,7 +15,16 @@ dependencies = [
     "pyarrow>=23.0.1",
     "scikit-learn>=1.8.0",
     "tqdm>=4.67.3",
+    "mypy>=1.19.1",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# sys.path 操作後のインポートは pipeline / scripts では構造上避けられない
+"src/portfolio/pipeline/*.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]
@@ -32,4 +42,5 @@ dev = [
     "mypy>=1.19.1",
     "pytest>=9.0.2",
     "ruff>=0.15.1",
+    "types-requests>=2.32.0",
 ]
