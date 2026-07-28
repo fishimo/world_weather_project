@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -27,6 +27,21 @@ class AmedasFetch:
     granularity_minutes: int = 60
     request_interval_sec: float = 2.0
 
+    @property
+    def station_id_by_name(self) -> Dict[str, str]:
+        """location_name -> station_id の対応表。
+
+        加工済みデータは location_name しか持たないため、station_id が必要な
+        箇所（予測結果の保存など）はここを正として引く。stations から都度導出し、
+        地点追加時に二重管理にならないようにしている。
+        """
+        return {str(s.name): str(s.station_id) for s in self.stations}
+
+    @property
+    def name_by_station_id(self) -> Dict[str, str]:
+        """station_id -> location_name の対応表（逆引き用）。"""
+        return {str(s.station_id): str(s.name) for s in self.stations}
+
 
 @dataclass(frozen=True)
 class DataBase:
@@ -35,6 +50,15 @@ class DataBase:
     ts_col: str = "last_updated"
     db_path: Path = field(
         default_factory=lambda: Path("data/processed/amedas/processed_amedas.db")
+    )
+
+
+@dataclass(frozen=True)
+class PredictionDataBase:
+    """予測結果DB用の設定"""
+    table_name: str = "predictions"
+    db_path: Path = field(
+        default_factory=lambda: Path("data/predictions/predictions.db")
     )
 
 
@@ -64,6 +88,7 @@ class Config:
     def __init__(self) -> None:
         self.amedas_fetch = AmedasFetch()
         self.database = DataBase()
+        self.prediction_database = PredictionDataBase()
         self.preprocess = PreProcess()
         self.pipeline = Pipeline()
 
