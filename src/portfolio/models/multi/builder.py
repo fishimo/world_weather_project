@@ -2,9 +2,10 @@ from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional
 
 from lightgbm import LGBMRegressor
-from portfolio.models.basicmodel import BasicModel
-from portfolio.models.multi.multioutputmodel import MultiOutputModel, RegressorLike
+
 from configs.params import Params
+from portfolio.models.multi.multioutputmodel import MultiOutputModel, RegressorLike
+
 
 class MultiModelBuilder:
     """MultiOutPutModelを生成するBuilder"""
@@ -30,5 +31,5 @@ class MultiModelBuilder:
     def base_model_factory(self) -> Callable[[], RegressorLike]:
         return self._external_factory or self._default_base_model_factory
     
-    def base_model(self) -> BasicModel:
+    def base_model(self) -> MultiOutputModel:
         return MultiOutputModel(base_model_factory=self.base_model_factory)

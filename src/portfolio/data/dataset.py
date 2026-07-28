@@ -1,9 +1,9 @@
+import re
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-import polars as pl
 import pandas as pd
-import re
+import polars as pl
 
 from portfolio.utils.pd_pl_utils import ensure_pandas, ensure_polars
 
@@ -15,39 +15,8 @@ class Dataset:
     y: Optional[pd.Series] = None
     X: Optional[pd.DataFrame] = None
     y_expanded: Optional[pd.DataFrame] = None
-    original_expanded: Optional[pd.DataFrame] = None
     feature_list: Optional[List[str]] = None
 
-    @classmethod
-    def make_dataset(
-        cls,
-        df: pl.DataFrame,
-        y_col: str = "wind_mps_daily_mean",
-        idx_col: Optional[List[str]] = None,
-    ) -> "Dataset":
-        "生データからDatasetを作成するファクトリメソッド"
-        if idx_col is None:
-            idx_col = ["date", "location_name"]
-        
-        df_pd = ensure_pandas(df).copy()
-        if not isinstance(df_pd, pd.DataFrame):
-            raise TypeError("df には pandas DataFrame が必須です")
-        
-        df_pd["date"] = pd.to_datetime(df_pd["date"])
-        df_pd = df_pd.sort_values(["date", "location_name"]).reset_index(drop=True)
-
-        feature_cols = [c for c in df_pd.columns if c not in idx_col + [y_col]]
-        X_cols = [col for col in feature_cols if df_pd[col].dtype != "object"]
-        X_df = df_pd[X_cols] if X_cols else pd.DataFrame(index=df_pd.index)
-
-        return cls(
-            raw = df,
-            idx = df_pd[idx_col].reset_index(drop=True),
-            y = df_pd[y_col].reset_index(drop=True),
-            X = X_df.reset_index(drop=True),
-            feature_list=X_cols,
-        )
-    
     @property
     def date(self) -> pd.Series:
         return self.idx["date"] if self.idx is not None else pd.Series([])

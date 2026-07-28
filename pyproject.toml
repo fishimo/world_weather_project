@@ -13,10 +13,11 @@ dependencies = [
     "plotly>=6.7.0",
     "polars>=1.38.1",
     "pyarrow>=23.0.1",
-    "scikit-learn>=1.8.0",
     "tqdm>=4.67.3",
-    "mypy>=1.19.1",
 ]
+
+[tool.ruff]
+extend-exclude = [".venv_broken_*", "pytest-cache-files-*", ".tmp_unit", ".tmp_integration"]
 
 [tool.ruff.lint.per-file-ignores]
 # sys.path 操作後のインポートは pipeline / scripts では構造上避けられない

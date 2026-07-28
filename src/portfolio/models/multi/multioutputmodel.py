@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Protocol, Self
+from typing import Any, Callable, Optional, Protocol, Self
 
 import numpy as np
 from tqdm import tqdm
@@ -24,7 +24,6 @@ class MultiOutputModel:
         self.base_model_factory = base_model_factory
         self.models = []
         self.n_horizons: Optional[int] = None
-        self._feature_names_list: List[Optional[List[str]]] = []
 
     def fit(self, ds: Dataset, **kwargs: Any) -> Self:
         """Datasetを受け取って学習する"""
@@ -48,29 +47,17 @@ class MultiOutputModel:
             )
 
         # いったんまとめて学習
-        self._feature_names_list = []
         self.models = [self.base_model_factory() for _ in range(n_horizons)]
 
         print(f"starting model trainning: {n_horizons} horizon/ {n_samples} samples")
 
-        for h_idx, horizon in enumerate(
-            tqdm(
-                horizons,
-                desc="Training horizons (sequential)",
-                unit="horizon",
-                leave=False,
-            )
+        for h_idx in tqdm(
+            range(n_horizons),
+            desc="Training horizons (sequential)",
+            unit="horizon",
+            leave=False,
         ):
-            model = self.models[h_idx]
-            X_h = X
-            y_h = Y.iloc[:, h_idx]
-
-            if hasattr(X_h, "columns"):
-                self._feature_names_list.append(list(X_h.columns))
-            else:
-                self._feature_names_list.append(None)
-
-            model.fit(X_h, y_h)
+            self.models[h_idx].fit(X, Y.iloc[:, h_idx])
 
         return self
     
@@ -86,16 +73,9 @@ class MultiOutputModel:
         if ds.X is None:
             raise ValueError("ds must not be None")
         
-        predictions = []
-        for h_idx, horizon in enumerate(horizons):
-            X_h = ds.X.copy()
-
-            if self._feature_names_list and h_idx < len(self._feature_names_list):
-                feature_names = self._feature_names_list[h_idx]
-                if feature_names is None:
-                    raise ValueError("feature_names must not be None")
-            
-            pred_h = np.array(self.models[h_idx].predict(X_h))
-            predictions.append(pred_h)
+        X = ds.X.copy()
+        predictions = [
+            np.array(self.models[h_idx].predict(X)) for h_idx in range(len(horizons))
+        ]
 
         return np.column_stack(predictions)

@@ -3,8 +3,13 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-.venv_broken_20260412
+.venv_broken_*
 .env
+
+# テスト実行時の一時ディレクトリ（ruff/mypy の走査を権限エラーで止めるため除外）
+pytest-cache-files-*/
+.tmp_unit/
+.tmp_integration/
 
 # Jupyter
 *.ipynb

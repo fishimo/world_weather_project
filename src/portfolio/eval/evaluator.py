@@ -5,8 +5,8 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 from plotly.subplots import make_subplots
-from portfolio.models.multi.multioutputmodel import MultiOutputModel
 
+from portfolio.models.multi.multioutputmodel import MultiOutputModel
 
 
 @dataclass

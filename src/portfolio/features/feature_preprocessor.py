@@ -1,7 +1,6 @@
 import polars as pl
 
 
-
 class PreProcessor:
     def __init__(self, config):
         self.ts_col = str(config.preprocess.ts_col)
@@ -38,26 +37,6 @@ class PreProcessor:
             )
         
         return df.select(self.require_cols)
-
-    # def ave_day_wind(self, df: pl.DataFrame) -> pl.DataFrame:
-    #     """風速を日平均する（1日1行に集約）"""
-    #     if self.ts_col not in df.columns:
-    #         raise ValueError(f"timestamp カラムが見つかりません: {self.ts_col}")
-    #     if self.wind_col not in df.columns:
-    #         raise ValueError(f"wind カラムが見つかりません: {self.wind_col}")
-        
-    #     out = self._ensure_datetime(df)
-    #     out = (
-    #         out.with_columns(
-    #             pl.col(self.ts_col).dt.date().alias("date")
-    #         )
-    #         .group_by("date")
-    #         .agg(
-    #             pl.col(self.wind_col).mean().alias(f"{self.wind_col}_daily_mean")
-    #         )
-    #         .sort("date")
-    #     )
-    #     return out
     
     def ave_day_columns(self, df: pl.DataFrame) -> pl.DataFrame:
         """
