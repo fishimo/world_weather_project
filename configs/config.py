@@ -56,7 +56,7 @@ class PreProcess:
 @dataclass(frozen=True)
 class Pipeline:
     """pipeline用の設定"""
-    horizon: List[int] = field(default_factory=lambda: [1, 2, 3])
+    horizon: List[int] = field(default_factory=lambda: list(range(1, 96)))
 
 
 class Config:

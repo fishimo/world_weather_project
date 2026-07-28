@@ -42,16 +42,24 @@ _JSON_VALUE_FIELDS: dict[str, str] = {
     # 拡張例: "precipitation1h": "precipitation_1h_mm",
 }
 
-# HTML カラムキーワード → raw CSV カラム名
-# wind 系は別途処理するためここには含めない
+# HTML カラムキーワード → raw CSV カラム名（副ヘッダーで未解決の列へのフォールバック）
+# wind 系は副ヘッダーまたは別途処理するためここには含めない
 # value: (include_keywords, exclude_keywords)
 _HTML_VALUE_FIELDS: dict[str, tuple[list[str], list[str] | None]] = {
     "temperature_celsius": (["気温"], None),
     "humidity_pct":        (["湿度"], None),
-    # 気圧は現地優先; _HTML_PRESSURE_FALLBACK で海面を代替
-    "pressure_mb":         (["気圧", "現地"], None),
+    "pressure_mb":         (["気圧"], None),  # 最初のカラム=現地気圧
 }
-_HTML_PRESSURE_FALLBACK: list[str] = ["気圧"]
+
+# 副ヘッダー行（先頭値="時"）のキーワード → raw CSV カラム名
+# 同名カラム（風向・風速）を副ヘッダー値で区別するために使用
+_SUBHEADER_KEYWORD_MAP: dict[str, str] = {
+    "風速": "wind_mps",
+    "風向": "wind_degree",
+    "気温": "temperature_celsius",
+    "湿度": "humidity_pct",
+    "現地": "pressure_mb",
+}
 
 # raw CSV のカラム順（両fetcher共通）
 RAW_COLUMNS: list[str] = [
@@ -153,14 +161,12 @@ class AmedasHistoricalFetcher:
             f"&block_no={self._station.historical_block_no}"
             f"&year={year}&month={month}&day={day}&view="
         )
-        resp = requests.get(url, timeout=30)
+        # requests が Content-Type ヘッダーからエンコーディングを自動判定する
+        resp = requests.get(
+            url, timeout=30, headers={"User-Agent": "Mozilla/5.0"}
+        )
         resp.raise_for_status()
-        # 気象庁 etrn ページは EUC-JP が多い
-        try:
-            html = resp.content.decode("euc-jp")
-        except UnicodeDecodeError:
-            html = resp.content.decode("utf-8", errors="replace")
-        return self._parse_day_html(html, year, month, day)
+        return self._parse_day_html(resp.text, year, month, day)
 
     def _parse_day_html(
         self, html: str, year: int, month: int, day: int
@@ -169,7 +175,7 @@ class AmedasHistoricalFetcher:
             tables = pd.read_html(
                 StringIO(html),
                 na_values=["--", "×", "///", " ", ""],
-                header=[0, 1],
+                header=0,
                 flavor="lxml",
             )
         except Exception as exc:
@@ -185,34 +191,37 @@ class AmedasHistoricalFetcher:
                 f"(table sizes={[len(t) for t in tables]})"
             )
         table = max(candidates, key=len)
-
-        # MultiIndex カラムをフラット文字列に変換（"Unnamed" 部分は除外）
-        if isinstance(table.columns, pd.MultiIndex):
-            flat = [
-                " ".join(str(c) for c in col if "Unnamed" not in str(c)).strip()
-                for col in table.columns
-            ]
-        else:
-            flat = [str(c) for c in table.columns]
-        table.columns = flat
-
+        flat = [str(c) for c in table.columns]
         hour_col = flat[0]
-        wind_spd_col = _find_html_col(flat, ["風速"])
-        wind_dir_col = _find_html_col(flat, ["風向"])
+
+        # 先頭行が副ヘッダー（「時」列の値="時"）の場合、その値でカラムを特定する
+        # 風速・風向が同名列（"風向・風速(m/s)" / "風向・風速(m/s).1"）になるため
+        # カラム名キーワードだけでは区別できず、副ヘッダー値で解決する
+        first_vals = table.iloc[0].astype(str).tolist()
+        sub_col: dict[str, str] = {}
+        if first_vals[0] == "時":
+            for i, val in enumerate(first_vals):
+                for kw, raw_col in _SUBHEADER_KEYWORD_MAP.items():
+                    if kw in val and raw_col not in sub_col:
+                        sub_col[raw_col] = flat[i]
+            table = table.iloc[1:].reset_index(drop=True)
+
+        # 副ヘッダーで特定できなかった列はカラム名キーワード検索で補完
+        wind_spd_col = sub_col.get("wind_mps") or _find_html_col(flat, ["風速"])
+        wind_dir_col = (
+            sub_col.get("wind_degree") or _find_html_col(flat, ["風向"])
+        )
         if wind_spd_col is None or wind_dir_col is None:
             raise ValueError(
                 f"{year}/{month:02d}/{day:02d}: 風速/風向カラムが見つかりません "
                 f"(columns={flat})"
             )
 
-        # _HTML_VALUE_FIELDS に基づいて各物理量のカラムを特定
         value_col_map: dict[str, str | None] = {}
         for raw_col, (include, exclude) in _HTML_VALUE_FIELDS.items():
-            col = _find_html_col(flat, include, exclude)
-            # 気圧は現地が見つからなければ海面で代替
-            if col is None and raw_col == "pressure_mb":
-                col = _find_html_col(flat, _HTML_PRESSURE_FALLBACK)
-            value_col_map[raw_col] = col
+            value_col_map[raw_col] = sub_col.get(raw_col) or _find_html_col(
+                flat, include, exclude
+            )
 
         rows: list[dict] = []
         for _, row in table.iterrows():
