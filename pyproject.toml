@@ -16,6 +16,8 @@ dependencies = [
     # lightgbm.sklearn (LGBMRegressor) が scikit-learn を必須とするため明示的に宣言する
     "scikit-learn>=1.8.0",
     "tqdm>=4.67.3",
+    "dash>=4.4.1",
+    "dash-html-components>=2.0.0",
 ]
 
 [tool.ruff]
