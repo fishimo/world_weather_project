@@ -1,25 +1,17 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from dataclasses import asdict
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-SRC_ROOT = PROJECT_ROOT / "src"
-for root in (PROJECT_ROOT, SRC_ROOT):
-    root_str = str(root)
-    if root_str not in sys.path:
-        sys.path.insert(0, root_str)
-
-from configs.config import Config
-from configs.params import Params
-from portfolio.data.database_manager import DBManager
-from portfolio.data.dataset import DatasetGenerator
-from portfolio.eval.evaluator import Evaluator
-from portfolio.features.feature_preprocessor import PreProcessor
-from portfolio.models.model_store import ModelStore, TrainedModelArtifact
-from portfolio.models.multi.builder import MultiModelBuilder
+from forecast_core.config.config import Config
+from forecast_core.config.params import Params
+from forecast_core.data.database_manager import DBManager
+from forecast_core.data.dataset import DatasetGenerator
+from forecast_core.evaluation.evaluator import Evaluator
+from forecast_core.features.feature_preprocessor import PreProcessor
+from forecast_core.models.model_store import ModelStore, TrainedModelArtifact
+from forecast_core.models.multi.builder import MultiModelBuilder
 
 
 def parse_args() -> argparse.Namespace:

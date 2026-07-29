@@ -57,7 +57,7 @@ python scripts/fetch_historical.py --from 2024-01 --to 2025-04
 最新の AMeDAS JSON データを取得し、raw CSV に追記・前処理・SQLite 保存まで行います。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.download
+python -m uv run python -m forecast_core.pipeline.download
 ```
 
 ### 2. 学習
@@ -65,7 +65,7 @@ python -m uv run python -m portfolio.pipeline.download
 DB に入っている加工済みデータを読み込み、前処理・Dataset 作成・学習・簡易評価・モデル保存までを行います。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.train --test-size 0.2
+python -m uv run python -m forecast_core.pipeline.train --test-size 0.2
 ```
 
 学習済みモデルはデフォルトで `test_models/test_model.pkl` に保存されます。
@@ -75,7 +75,7 @@ python -m uv run python -m portfolio.pipeline.train --test-size 0.2
 保存済みモデルを読み込み、指定期間のデータから最新日時のレコードを使って予測し、CSV に保存します。
 
 ```powershell
-python -m uv run python -m portfolio.pipeline.predict `
+python -m uv run python -m forecast_core.pipeline.predict `
   --model-path test_models/test_model.pkl `
   --start "2026-04-01 00:00:00" `
   --end "2026-04-21 00:00:00" `
@@ -90,11 +90,11 @@ python -m uv run python -m portfolio.pipeline.predict `
 25 * * * * cd /path/to/world_weather_project && python scripts/fetch_latest.py
 ```
 
-予測も合わせて行う場合は `portfolio.pipeline.predict` を実行してください（内部で最新データ取得を行います）。
+予測も合わせて行う場合は `forecast_core.pipeline.predict` を実行してください（内部で最新データ取得を行います）。
 
 ## 補足
 
-- 予測で使う horizon は `configs/config.py` の `pipeline.horizon = [1, 2, 3]`（日単位）です。
-- 観測地点の追加は `configs/config.py` の `AmedasFetch.stations` リストに `AmedasStation` を追加します。
+- 予測で使う horizon は `forecast_core/config/config.py` の `pipeline.horizon = [1, 2, 3]`（日単位）です。
+- 観測地点の追加は `forecast_core/config/config.py` の `AmedasFetch.stations` リストに `AmedasStation` を追加します。
 - 物理量（気温・湿度・気圧等）の追加は `amedas_fetcher.py` の `_JSON_VALUE_FIELDS` / `_HTML_VALUE_FIELDS` に1行追記します。
 - 学習時の特徴量一覧はモデル保存時に保持されており、推論時に列順を自動で揃えます。

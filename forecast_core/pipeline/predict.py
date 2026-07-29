@@ -1,26 +1,18 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-SRC_ROOT = PROJECT_ROOT / "src"
-for root in (PROJECT_ROOT, SRC_ROOT):
-    root_str = str(root)
-    if root_str not in sys.path:
-        sys.path.insert(0, root_str)
-
-from configs.config import Config
-from portfolio.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
-from portfolio.data.amedas_processor import AmedasProcessor
-from portfolio.data.database_manager import DBManager
-from portfolio.data.dataset import Dataset, DatasetGenerator
-from portfolio.features.feature_preprocessor import PreProcessor
-from portfolio.models.model_store import ModelStore
+from forecast_core.config.config import Config
+from forecast_core.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
+from forecast_core.data.database_manager import DBManager
+from forecast_core.data.dataset import Dataset, DatasetGenerator
+from forecast_core.features.feature_preprocessor import PreProcessor
+from forecast_core.models.model_store import ModelStore
+from forecast_core.preprocessing.amedas_processor import AmedasProcessor
 
 
 def parse_args() -> argparse.Namespace:

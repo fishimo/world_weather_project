@@ -39,48 +39,63 @@ python -m uv pip install -e .
 
 ```
 world_weather_project/
-├── configs/                   # 設定（frozen dataclass）
-│   ├── config.py              #   DataDownload / DataProcess / DataBase / PreProcess / Pipeline
-│   └── params.py              #   LightGBMParams
-├── src/portfolio/
-│   ├── data/
-│   │   ├── data_downloader.py # AMeDAS データ取得
-│   │   ├── data_processor.py  # 前処理（カラム選択・型変換）
-│   │   ├── database_manager.py# SQLite 保存・読み込み
-│   │   └── dataset.py         # Dataset / DatasetGenerator（horizon 展開）
+├── forecast_core/             # 予測パイプライン本体（import 名 = forecast_core）
+│   ├── config/                # 設定（frozen dataclass）
+│   │   ├── config.py          #   AmedasFetch / DataBase / PredictionDataBase / PreProcess / Pipeline
+│   │   └── params.py          #   LightGBMParams
+│   ├── preprocessing/
+│   │   └── amedas_processor.py# 前処理（カラム選択・型変換）
 │   ├── features/
 │   │   └── feature_preprocessor.py  # 日平均化・型変換
+│   ├── data/
+│   │   ├── amedas_fetcher.py  # AMeDAS データ取得
+│   │   ├── database_manager.py# SQLite 保存・読み込み
+│   │   └── dataset.py         # Dataset / DatasetGenerator（horizon 展開）
 │   ├── models/
 │   │   ├── model_store.py     # pickle 保存・読み込み（TrainedModelArtifact）
 │   │   └── multi/
+│   │       ├── builder.py     # MultiModelBuilder
 │   │       └── multioutputmodel.py  # LightGBM multi-output ラッパー
-│   ├── pipeline/
-│   │   ├── download.py        # ステップ1: 取得 → DB 保存
-│   │   ├── train.py           # ステップ2: 学習 → モデル保存
-│   │   └── predict.py         # ステップ3: 予測 → CSV 出力
-│   └── eval/
-│       └── evaluator.py
+│   ├── evaluation/
+│   │   └── evaluator.py
+│   ├── utils/
+│   │   └── pd_pl_utils.py     # pandas / polars 変換ヘルパ
+│   └── pipeline/
+│       ├── download.py        # ステップ1: 取得 → DB 保存
+│       ├── train.py           # ステップ2: 学習 → モデル保存
+│       └── predict.py         # ステップ3: 予測 → DB 保存（CSV は任意）
+├── app_platform/              # 可視化アプリ（標準ライブラリ platform と衝突するため app_ 接頭辞）
+│   ├── data/                  # DB・Parquet の読み込み処理
+│   ├── extract/               # 抽出・結合・集計
+│   ├── figures/               # Plotly Figure 生成
+│   ├── components/            # 地図・入力欄などの共通部品
+│   └── pages/                 # 画面構成・画面遷移
+├── scripts/                   # 手動実行スクリプト（バックフィル・最新取得）
 ├── data/
 │   ├── raw/amedas/            # 生データ（JSON → CSV）
 │   ├── processed/amedas/      # 加工済み SQLite DB
-│   └── predictions/
+│   └── predictions/           # 予測結果 SQLite DB
 ├── outputs/                   # 予測結果 CSV
 ├── test_models/               # 学習済みモデル pickle
 └── tests/
     └── integration/           # パイプライン統合テスト
 ```
 
+`forecast_core` / `app_platform` はどちらも editable install 済みパッケージなので、
+`sys.path` 操作は不要。`from forecast_core.data.dataset import Dataset` のように import する。
+データパスは cwd 相対のため、実行は必ずリポジトリルートで行うこと。
+
 ## パイプライン実行コマンド
 
 ```powershell
 # 1. データ取得 → DB 保存
-python -m uv run python -m portfolio.pipeline.download
+python -m uv run python -m forecast_core.pipeline.download
 
 # 2. 学習 → モデル保存
-python -m uv run python -m portfolio.pipeline.train --test-size 0.2
+python -m uv run python -m forecast_core.pipeline.train --test-size 0.2
 
 # 3. 予測 → CSV 出力
-python -m uv run python -m portfolio.pipeline.predict `
+python -m uv run python -m forecast_core.pipeline.predict `
   --model-path test_models/test_model.pkl `
   --start "2026-04-01 00:00:00" `
   --end "2026-04-21 00:00:00" `
@@ -89,24 +104,24 @@ python -m uv run python -m portfolio.pipeline.predict `
 
 ## Config 構造
 
-`configs/config.py` の frozen dataclass でパスや列名を一元管理。ハードコード禁止。
+`forecast_core/config/config.py` の frozen dataclass でパスや列名を一元管理。ハードコード禁止。
 
 ```python
 Config
-├── data_download: DataDownload   # 取得対象地点・保存先
-├── data_process:  DataProcess    # 使用カラム・対象地点
-├── database:      DataBase       # DB パス・テーブル名・タイムスタンプ列名
-├── preprocess:    PreProcess     # 特徴量列・風速列名
-└── pipeline:      Pipeline       # horizon リスト（例: [1, 2, 3]）
+├── amedas_fetch:        AmedasFetch         # 取得対象地点・保存先・リクエスト間隔
+├── database:            DataBase            # DB パス・テーブル名・タイムスタンプ列名
+├── prediction_database: PredictionDataBase  # 予測結果 DB パス・テーブル名
+├── preprocess:          PreProcess          # 特徴量列・風速列名
+└── pipeline:            Pipeline            # horizon リスト（例: [1, 2, 3]）
 ```
 
-モデルハイパーパラメータは `configs/params.py` の `LightGBMParams` で管理。
+モデルハイパーパラメータは `forecast_core/config/params.py` の `LightGBMParams` で管理。
 
 ## コーディング規約
 
 - **型ヒント必須**（すべての関数シグネチャ）
 - フォーマッタ: `ruff`、型チェック: `mypy`
-- 設定値はすべて `configs/` に外出しし、コード内にハードコードしない
+- 設定値はすべて `forecast_core/config/` に外出しし、コード内にハードコードしない
 - 可読性を重視（短絡的な省略より明示的な記述）
 - コメントは「なぜそう書いたか」が自明でない箇所にのみ付ける
 - ヘルパー関数は使用する関数より前に置く

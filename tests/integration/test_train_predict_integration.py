@@ -11,12 +11,12 @@ from uuid import uuid4
 import pandas as pd
 import pytest
 
-from configs.config import AmedasFetch, AmedasStation, Config, Pipeline
-from configs.params import LightGBMParams
-from portfolio.data.amedas_processor import AmedasProcessor
-from portfolio.data.database_manager import DBManager
-from portfolio.pipeline import predict as predict_pipeline
-from portfolio.pipeline import train as train_pipeline
+from forecast_core.config.config import AmedasFetch, AmedasStation, Config, Pipeline
+from forecast_core.config.params import LightGBMParams
+from forecast_core.data.database_manager import DBManager
+from forecast_core.pipeline import predict as predict_pipeline
+from forecast_core.pipeline import train as train_pipeline
+from forecast_core.preprocessing.amedas_processor import AmedasProcessor
 
 # ダミーデータの地点定義。config とテストデータで同じものを使う
 _STATIONS = [

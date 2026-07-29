@@ -8,18 +8,8 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = PROJECT_ROOT / "src"
-for root in (PROJECT_ROOT, SRC_ROOT):
-    root_str = str(root)
-    if root_str not in sys.path:
-        sys.path.insert(0, root_str)
-
-from configs.config import Config
-from portfolio.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
+from forecast_core.config.config import Config
+from forecast_core.data.amedas_fetcher import AmedasLatestFetcher, AmedasRawDataWriter
 
 
 def main() -> None:

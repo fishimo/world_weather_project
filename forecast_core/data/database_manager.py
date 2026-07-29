@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 
-from portfolio.utils.pd_pl_utils import ensure_polars
+from forecast_core.utils.pd_pl_utils import ensure_polars
 
 # predictionsテーブルの列順（DDL・INSERT・戻り値で共通に使う）
 PREDICTION_COLUMNS: list[str] = [

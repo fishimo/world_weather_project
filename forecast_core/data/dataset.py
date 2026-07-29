@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence, Tuple
 import pandas as pd
 import polars as pl
 
-from portfolio.utils.pd_pl_utils import ensure_pandas, ensure_polars
+from forecast_core.utils.pd_pl_utils import ensure_pandas, ensure_polars
 
 
 @dataclass

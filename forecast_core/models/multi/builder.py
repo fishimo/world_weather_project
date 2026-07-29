@@ -3,8 +3,8 @@ from typing import Any, Callable, Dict, Optional
 
 from lightgbm import LGBMRegressor
 
-from configs.params import Params
-from portfolio.models.multi.multioutputmodel import MultiOutputModel, RegressorLike
+from forecast_core.config.params import Params
+from forecast_core.models.multi.multioutputmodel import MultiOutputModel, RegressorLike
 
 
 class MultiModelBuilder:

@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import polars as pl
 from plotly.subplots import make_subplots
 
-from portfolio.models.multi.multioutputmodel import MultiOutputModel
+from forecast_core.models.multi.multioutputmodel import MultiOutputModel
 
 # 図の出力先ルート。artifact_path はこの下に相対で展開される
 FIGURE_OUTPUT_ROOT = Path("outputs")

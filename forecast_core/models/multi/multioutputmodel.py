@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Self
 import numpy as np
 from tqdm import tqdm
 
-from portfolio.data.dataset import Dataset
+from forecast_core.data.dataset import Dataset
 
 
 class RegressorLike(Protocol):

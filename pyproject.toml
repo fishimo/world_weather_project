@@ -13,6 +13,8 @@ dependencies = [
     "plotly>=6.7.0",
     "polars>=1.38.1",
     "pyarrow>=23.0.1",
+    # lightgbm.sklearn (LGBMRegressor) が scikit-learn を必須とするため明示的に宣言する
+    "scikit-learn>=1.8.0",
     "tqdm>=4.67.3",
 ]
 
@@ -37,23 +39,19 @@ module = [
 ]
 ignore_missing_imports = true
 
-[tool.ruff.lint.per-file-ignores]
-# sys.path 操作後のインポートは pipeline / scripts では構造上避けられない
-"src/portfolio/pipeline/*.py" = ["E402"]
-"scripts/*.py" = ["E402"]
-
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["forecast_core*", "app_platform*"]
 
 [dependency-groups]
 dev = [
