@@ -1,16 +1,20 @@
-import dash
-from dash import html
+from dash import Dash, dcc, html
+
+from app_platform.data.stations import load_stations
+from app_platform.figures.japan_map import create_japan_map
+
 # Dashインスタンスを生成する
-app = dash.Dash(__name__)
+app = Dash(__name__)
+
 # コンポーネントをlayout属性に渡す
-app.layout = html.P(
-    "こんにちは。Dashが起動できました。",
-    # スタイルの設定
-    style={
-        "fontSize": 50,  # 文字サイズ
-        "color": "white",  # 文字色
-        "backgroundColor": "#000000",  # 背景色
-    },
+app.layout = html.Div(
+    [
+        html.H1("日本のAMeDAS観測点"),
+        dcc.Graph(
+            figure=create_japan_map(load_stations()),
+            style={"height": "80vh"},
+        ),
+    ]
 )
 
 if __name__ == "__main__":
