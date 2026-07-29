@@ -11,9 +11,9 @@ class MultiModelBuilder:
     """MultiOutPutModelを生成するBuilder"""
 
     def __init__(
-            self,
-            params: Params,
-            base_model_factory: Optional[Callable[[], RegressorLike]] = None,
+        self,
+        params: Params,
+        base_model_factory: Optional[Callable[[], RegressorLike]] = None,
     ):
         self.params = params
         self._external_factory = base_model_factory
@@ -30,6 +30,6 @@ class MultiModelBuilder:
     @property
     def base_model_factory(self) -> Callable[[], RegressorLike]:
         return self._external_factory or self._default_base_model_factory
-    
+
     def base_model(self) -> MultiOutputModel:
         return MultiOutputModel(base_model_factory=self.base_model_factory)

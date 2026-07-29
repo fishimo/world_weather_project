@@ -19,6 +19,24 @@ dependencies = [
 [tool.ruff]
 extend-exclude = [".venv_broken_*", "pytest-cache-files-*", ".tmp_unit", ".tmp_integration"]
 
+[tool.mypy]
+exclude = ["^\\.venv_broken_", "^pytest-cache-files-", "^\\.tmp_"]
+
+# 型スタブを提供しないライブラリ群。スタブを入れると既存コード全体に
+# 大量の型エラーが波及するため、インポート側だけ緩める
+[[tool.mypy.overrides]]
+module = [
+    "pandas",
+    "pandas.*",
+    "plotly",
+    "plotly.*",
+    "tqdm",
+    "tqdm.*",
+    "lightgbm",
+    "lightgbm.*",
+]
+ignore_missing_imports = true
+
 [tool.ruff.lint.per-file-ignores]
 # sys.path 操作後のインポートは pipeline / scripts では構造上避けられない
 "src/portfolio/pipeline/*.py" = ["E402"]

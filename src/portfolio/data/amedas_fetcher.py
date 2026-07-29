@@ -20,10 +20,22 @@ _WIND_CODE_TO_DEG[16] = 0.0
 
 # 気象庁HTML 16方位テキスト → 度数
 _WIND_TEXT_TO_DEG: dict[str, float] = {
-    "静穏": 0.0,   "北北東": 22.5,  "北東": 45.0,   "東北東": 67.5,
-    "東": 90.0,    "東南東": 112.5, "南東": 135.0,  "南南東": 157.5,
-    "南": 180.0,   "南南西": 202.5, "南西": 225.0,  "西南西": 247.5,
-    "西": 270.0,   "西北西": 292.5, "北西": 315.0,  "北北西": 337.5,
+    "静穏": 0.0,
+    "北北東": 22.5,
+    "北東": 45.0,
+    "東北東": 67.5,
+    "東": 90.0,
+    "東南東": 112.5,
+    "南東": 135.0,
+    "南南東": 157.5,
+    "南": 180.0,
+    "南南西": 202.5,
+    "南西": 225.0,
+    "西南西": 247.5,
+    "西": 270.0,
+    "西北西": 292.5,
+    "北西": 315.0,
+    "北北西": 337.5,
     "北": 0.0,
 }
 
@@ -47,8 +59,8 @@ _JSON_VALUE_FIELDS: dict[str, str] = {
 # value: (include_keywords, exclude_keywords)
 _HTML_VALUE_FIELDS: dict[str, tuple[list[str], list[str] | None]] = {
     "temperature_celsius": (["気温"], None),
-    "humidity_pct":        (["湿度"], None),
-    "pressure_mb":         (["気圧"], None),  # 最初のカラム=現地気圧
+    "humidity_pct": (["湿度"], None),
+    "pressure_mb": (["気圧"], None),  # 最初のカラム=現地気圧
 }
 
 # 副ヘッダー行（先頭値="時"）のキーワード → raw CSV カラム名
@@ -63,13 +75,22 @@ _SUBHEADER_KEYWORD_MAP: dict[str, str] = {
 
 # raw CSV のカラム順（両fetcher共通）
 RAW_COLUMNS: list[str] = [
-    "timestamp", "station_id", "location_name", "latitude", "longitude",
-    "temperature_celsius", "humidity_pct", "wind_mps", "wind_degree",
-    "pressure_mb", "missing_flag",
+    "timestamp",
+    "station_id",
+    "location_name",
+    "latitude",
+    "longitude",
+    "temperature_celsius",
+    "humidity_pct",
+    "wind_mps",
+    "wind_degree",
+    "pressure_mb",
+    "missing_flag",
 ]
 
 
 # ---------- helpers ----------
+
 
 def _to_float(value: object) -> float | None:
     """任意の値をfloatに変換。変換不能またはNaNの場合はNoneを返す。"""
@@ -106,6 +127,7 @@ def _find_html_col(
 
 
 # ---------- fetchers ----------
+
 
 class AmedasHistoricalFetcher:
     """気象庁過去データ(HTML)から日単位で取得し、月単位にまとめて返す。
@@ -162,9 +184,7 @@ class AmedasHistoricalFetcher:
             f"&year={year}&month={month}&day={day}&view="
         )
         # requests が Content-Type ヘッダーからエンコーディングを自動判定する
-        resp = requests.get(
-            url, timeout=30, headers={"User-Agent": "Mozilla/5.0"}
-        )
+        resp = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
         resp.raise_for_status()
         return self._parse_day_html(resp.text, year, month, day)
 
@@ -208,9 +228,7 @@ class AmedasHistoricalFetcher:
 
         # 副ヘッダーで特定できなかった列はカラム名キーワード検索で補完
         wind_spd_col = sub_col.get("wind_mps") or _find_html_col(flat, ["風速"])
-        wind_dir_col = (
-            sub_col.get("wind_degree") or _find_html_col(flat, ["風向"])
-        )
+        wind_dir_col = sub_col.get("wind_degree") or _find_html_col(flat, ["風向"])
         if wind_spd_col is None or wind_dir_col is None:
             raise ValueError(
                 f"{year}/{month:02d}/{day:02d}: 風速/風向カラムが見つかりません "
@@ -234,9 +252,8 @@ class AmedasHistoricalFetcher:
 
             # 時=24 は翌日0時
             if hour == 24:
-                ts = (
-                    datetime(year, month, day, 0, 0, 0, tzinfo=_JST)
-                    + timedelta(days=1)
+                ts = datetime(year, month, day, 0, 0, 0, tzinfo=_JST) + timedelta(
+                    days=1
                 )
             else:
                 ts = datetime(year, month, day, hour, 0, 0, tzinfo=_JST)
@@ -306,8 +323,13 @@ class AmedasLatestFetcher:
                 continue
             try:
                 ts = datetime(
-                    int(ts_str[0:4]), int(ts_str[4:6]), int(ts_str[6:8]),
-                    int(ts_str[8:10]), 0, 0, tzinfo=_JST,
+                    int(ts_str[0:4]),
+                    int(ts_str[4:6]),
+                    int(ts_str[6:8]),
+                    int(ts_str[8:10]),
+                    0,
+                    0,
+                    tzinfo=_JST,
                 )
             except ValueError:
                 continue
@@ -315,9 +337,7 @@ class AmedasLatestFetcher:
             wind_mps = _json_value(obs.get("wind"))
             wind_code = _json_value(obs.get("windDirection"))
             wind_degree = (
-                _WIND_CODE_TO_DEG.get(int(wind_code))
-                if wind_code is not None
-                else None
+                _WIND_CODE_TO_DEG.get(int(wind_code)) if wind_code is not None else None
             )
 
             record: dict = {
@@ -366,8 +386,7 @@ class AmedasRawDataWriter:
             combined = df.copy()
 
         combined = (
-            combined
-            .drop_duplicates(subset=self._DEDUP_KEYS, keep="last")
+            combined.drop_duplicates(subset=self._DEDUP_KEYS, keep="last")
             .sort_values(["station_id", "timestamp"])
             .reset_index(drop=True)
         )

@@ -52,4 +52,4 @@ class AmedasProcessor:
         nan_count = df.isna().sum()
         nan_rate = df.isna().mean()
         for col in df.columns:
-            print(f"{col}: missing={nan_count[col]} ({nan_rate[col]*100:.2f} %)")
+            print(f"{col}: missing={nan_count[col]} ({nan_rate[col] * 100:.2f} %)")

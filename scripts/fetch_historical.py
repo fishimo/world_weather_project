@@ -7,6 +7,7 @@
     # 期間指定
     python scripts/fetch_historical.py --from 2024-01 --to 2025-04
 """
+
 from __future__ import annotations
 
 import argparse

@@ -67,9 +67,9 @@ class DBManager:
         self,
         df: pd.DataFrame,
         *,
-        if_exists:str = "replace", # 将来"append"や"fail"なども使い分けたい
+        if_exists: str = "replace",  # 将来"append"や"fail"なども使い分けたい
         index: bool = False,
-        ) -> None:
+    ) -> None:
         """DataProcessorで加工済みのデータをdbに保存"""
         # db用のディレクトリ作成
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -77,7 +77,7 @@ class DBManager:
         # 入力チェック
         if df is None or df.empty:
             raise ValueError("保存するデータがありません")
-        
+
         with sqlite3.connect(self.db_path) as conn:
             df.to_sql(self.table_name, conn, if_exists=if_exists, index=index)
 
@@ -86,7 +86,7 @@ class DBManager:
         # db_pathの確認
         if not self.db_path.exists():
             raise FileNotFoundError(f"DB file not found: {self.db_path.resolve()}")
-        
+
         print(f"Loading all data from {self.table_name}")
         # カラム名/テーブル名はパラメータ化できないので、存在確認してから使う
         with sqlite3.connect(self.db_path) as conn:
@@ -103,7 +103,8 @@ class DBManager:
             schema = pd.read_sql_query(f"PRAGMA table_info({self.table_name})", conn)
             if self.ts_col not in set(schema["name"].tolist()):
                 raise ValueError(
-                    f"Column not found: {self.ts_col}. Available: {schema['name'].tolist()}"
+                    f"Column not found: {self.ts_col}. "
+                    f"Available: {schema['name'].tolist()}"
                 )
 
             sql = f"""
@@ -130,12 +131,14 @@ class DBManager:
             end date: ロード終了日
 
         return:
-            pl.DataFrame: polarsのデータフレーム（パイプラインをpolarsで作成する予定のため）
+            pl.DataFrame: polarsのデータフレーム
+                （パイプラインをpolarsで作成する予定のため）
         """
         # 指定日付の確認
         if start_date >= end_date:
             raise ValueError(
-                f"start_date must be earlier than end_date. start_date={start_date}, end_date={end_date}"
+                "start_date must be earlier than end_date. "
+                f"start_date={start_date}, end_date={end_date}"
             )
         print(f"Loading data slice: start={start_date}, end={end_date}")
 
@@ -161,7 +164,8 @@ class DBManager:
             schema = pd.read_sql_query(f"PRAGMA table_info({self.table_name})", conn)
             if self.ts_col not in set(schema["name"].tolist()):
                 raise ValueError(
-                    f"Column not found: {self.ts_col}. Available: {schema['name'].tolist()}"
+                    f"Column not found: {self.ts_col}. "
+                    f"Available: {schema['name'].tolist()}"
                 )
 
             sql = f"""
@@ -342,6 +346,3 @@ class DBManager:
             pd_df = pd.read_sql_query(sql, conn, params=tuple(params))
 
         return ensure_polars(pd_df)
-
-
-    

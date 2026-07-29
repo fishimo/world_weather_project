@@ -34,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
+
 def main() -> None:
     args = parse_args()
 
@@ -79,7 +80,10 @@ def main() -> None:
 
     preds = model.predict(test_ds, horizons=horizon)
     print(f"predict finished shape={preds.shape}")
-    
+
+    if test_ds.y_expanded is None:
+        raise ValueError("test_ds.y_expanded is required to evaluate")
+
     evaluator = Evaluator()
     score = evaluator.evaluate(
         y_true=test_ds.y_expanded.to_numpy(),

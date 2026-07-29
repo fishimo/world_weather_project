@@ -5,6 +5,7 @@
 使用例:
     python scripts/fetch_latest.py
 """
+
 from __future__ import annotations
 
 import sys
