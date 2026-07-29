@@ -1,12 +1,28 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 from plotly.subplots import make_subplots
+
 from portfolio.models.multi.multioutputmodel import MultiOutputModel
 
+# 図の出力先ルート。artifact_path はこの下に相対で展開される
+FIGURE_OUTPUT_ROOT = Path("outputs")
+
+
+def log_figure(fig: Any, artifact_path: str) -> Path:
+    """plotly の図を HTML として保存する。
+
+    元は MLflow の log_figure を呼ぶ想定だったが、本プロジェクトは MLflow を
+    使っていないためローカル保存に置き換えている。
+    """
+    path = FIGURE_OUTPUT_ROOT / artifact_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(str(path))
+    return path
 
 
 @dataclass
@@ -43,8 +59,9 @@ class Evaluator:
     - MAE
     - RMSE (Root Mean Squared Error)
     """
+
     def caluculate_bias(
-            self, y_true: np.ndarray, y_pred: np.ndarray
+        self, y_true: np.ndarray, y_pred: np.ndarray
     ) -> Tuple[float, np.ndarray]:
         """
         biasを計算（y_pred - y_true）
@@ -88,7 +105,7 @@ class Evaluator:
             bias_per_h = np.array([bias_overall])
 
         return bias_overall, bias_per_h
-    
+
     def calculate_relative_bias(
         self, y_true: np.ndarray, y_pred: np.ndarray, epsilon: float = 10.0
     ) -> Tuple[float, np.ndarray]:
@@ -277,7 +294,9 @@ class Evaluator:
 
         dispatch = {
             "bias": lambda yt, yp: self.caluculate_bias(yt, yp),
-            "relative_bias": lambda yt, yp: self.calculate_relative_bias(yt, yp, epsilon),
+            "relative_bias": lambda yt, yp: self.calculate_relative_bias(
+                yt, yp, epsilon
+            ),
             "mae": lambda yt, yp: self.calculate_mae(yt, yp),
             "rmse": lambda yt, yp: self.calculate_rmse(yt, yp),
         }
@@ -306,7 +325,8 @@ class VizEvaluation:
         Args:
             figsize: 1つの subplot の大きさ（plotlyでは使用されません）
         """
-        # scoreが辞書の場合は"metrics"キーから取得、EvaluationMetricsオブジェクトの場合は.metrics属性から取得
+        # scoreが辞書の場合は"metrics"キーから取得、
+        # EvaluationMetricsオブジェクトの場合は.metrics属性から取得
         if isinstance(self.score, dict):
             metrics = self.score.get("metrics", {})
         else:
@@ -545,7 +565,10 @@ class VizEvaluation:
         )
 
         fig.update_layout(
-            title=f"Feature Importance Map ({len(feature_names)} features, {n_horizons} horizons)",
+            title=(
+                f"Feature Importance Map "
+                f"({len(feature_names)} features, {n_horizons} horizons)"
+            ),
             xaxis_title="Horizon",
             yaxis_title="Features",
             height=max(800, len(feature_names) * 20),  # 特徴量数に応じて高さを調整

@@ -5,7 +5,6 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "src"
 for root in (PROJECT_ROOT, SRC_ROOT):
@@ -15,12 +14,12 @@ for root in (PROJECT_ROOT, SRC_ROOT):
 
 from configs.config import Config
 from configs.params import Params
-from portfolio.models.multi.builder import MultiModelBuilder
 from portfolio.data.database_manager import DBManager
 from portfolio.data.dataset import DatasetGenerator
+from portfolio.eval.evaluator import Evaluator
 from portfolio.features.feature_preprocessor import PreProcessor
 from portfolio.models.model_store import ModelStore, TrainedModelArtifact
-from portfolio.eval.evaluator import Evaluator
+from portfolio.models.multi.builder import MultiModelBuilder
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +33,7 @@ def parse_args() -> argparse.Namespace:
         help="Test dataset ratio",
     )
     return parser.parse_args()
+
 
 def main() -> None:
     args = parse_args()
@@ -80,7 +80,10 @@ def main() -> None:
 
     preds = model.predict(test_ds, horizons=horizon)
     print(f"predict finished shape={preds.shape}")
-    
+
+    if test_ds.y_expanded is None:
+        raise ValueError("test_ds.y_expanded is required to evaluate")
+
     evaluator = Evaluator()
     score = evaluator.evaluate(
         y_true=test_ds.y_expanded.to_numpy(),
