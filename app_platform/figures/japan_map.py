@@ -20,6 +20,9 @@ def create_japan_map(stations: pd.DataFrame) -> go.Figure:
         lat="latitude",
         lon="longitude",
         hover_name="name",
+        # これを渡して初めて clickData の points[0]["customdata"] に station_id が
+        # 乗る（DataFrame に列があるだけでは Figure に届かない）
+        custom_data=["station_id"],
     )
     fig.update_traces(marker={"size": view.marker_size, "color": view.marker_color})
 
